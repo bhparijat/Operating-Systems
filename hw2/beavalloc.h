@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
+#include <math.h>
 #ifndef __BEAVALLOC_H
 # define __BEAVALLOC_H
 

@@ -2,8 +2,12 @@
 //#include <assert.h>
 
 #define MEM 1024
-#define debug 1
+#define debug 0
 #define debug1 1 
+#define assertd 0
+#define debugbeavfree 1
+#define debugstart 1
+#define debugcoalesce 1
 /*
 
 
@@ -29,34 +33,87 @@ char *baseloc = NULL;
 void coalesce(void){
 
 
-
+    if(debugcoalesce==1)printf("Inside coalesce\n");
 
     struct node *temp = start;
+
+    while(temp!=NULL && temp->next !=NULL){
+
+
+        printf("temp is %p and temp->next is %p,%p currently used sizes are %d, %d\n",temp,temp->next,temp->next->next,temp->currently_in_use,temp->next->currently_in_use  );
+        if(temp->currently_in_use == 0 && temp->next->currently_in_use==0){
+
+            printf("checking in here %d, %d\n",temp->size_of_block,temp->next->size_of_block);
+            temp->size_of_block += temp->next->size_of_block ;
+            temp->size_of_block += 40;
+
+
+
+            printf("checking in here again %d %d\n",temp->size_of_block,temp->next->size_of_block);
+
+
+            assert(temp->size_of_block!=0);
+            
+            temp->next = temp->next->next;
+
+
+            printf("checking in here again %p \n",temp->next);
+
+            if(temp->next && temp->next->next!=NULL){
+                if(debugcoalesce==1)printf("setting previous pointer of temp->next->next %p\n",temp->next->next);
+                temp->next->next->prev = temp;
+            }
+
+            if(debugcoalesce==1)printf("moving to next pointer in coalesce %p\n",temp,temp->next );
+            
+        }else{
+            if(debugcoalesce==1)printf("moving to next pointer in coalesce %p\n",temp->next );
+            temp = temp->next;
+        }
+    }
+
+    printf("exited while loop...");
+    if(debugcoalesce==1)printf("Setting current in coalesce\n");
+    temp = start;
+    while(temp && temp->next)
+        temp = temp->next;
+
+    cur = temp;
+
+
+
+    return;
+
 }
 
 void check_and_split(void ){
 
 
-    printf(" Inside check_and_split\n");
+    if(debug==1)printf(" Inside check_and_split\n");
     struct node *t = start;
 
     while(t!=NULL){
         int sizeofnode = sizeof((*t));
-        printf("sizeofnode is %d\n",sizeofnode );
-        printf("node starts at %p and data starts at %p, %d ,%d , %p,%p\n",t,t->mem_block,t->size_of_block,t->currently_in_use,t->next,t->prev);
+
+
+        if(debug==1)printf("sizeofnode is %d\n",sizeofnode );
+        if(debug==1)printf("node starts at %p and data starts at %p, %d ,%d , %p,%p\n",t,t->mem_block,t->size_of_block,t->currently_in_use,t->next,t->prev);
 
         if((t->size_of_block - t->currently_in_use) > sizeofnode && t->currently_in_use>0){
 
             // split nodes;
-            printf("going to split\n");
+            if(debug==1)printf("going to split\n");
             char *ptr = (char *)t;
             int c=0;
             int offset=0;
             
-            printf("node starts at %p and data starts at %p, %d ,%d , %p,%p\n",t,t->mem_block,t->size_of_block,t->currently_in_use,t->next,t->prev);
+            if(debug==1)printf("node starts at %p and data starts at %p, %d ,%d , %p,%p\n",t,t->mem_block,t->size_of_block,t->currently_in_use,t->next,t->prev);
             // c = brk(t);
-            printf("%p %p %p %p %p\n",t,&t->size_of_block,&t->mem_block,&t->prev,&t->currently_in_use,&t->blk_no,&t->next);
-            if(debug1==1){
+            if(debug==1)printf("%p %p %p %p %p\n",t,&t->size_of_block,&t->mem_block,&t->prev,&t->currently_in_use,&t->blk_no,&t->next);
+            
+
+
+            if(debug==1){
                 //printf("splitting a node here, current location would be This node starts at %p\n ",sbrk(0));
                 printf("node's header is %d\n",sizeofnode);
                 printf("node starts at %p and data starts at %p\n",t,t->mem_block);
@@ -64,34 +121,39 @@ void check_and_split(void ){
             }
             offset = sizeofnode + t->currently_in_use;
 
-            printf("newnode needs to be started at offset %d from original node at %p\n",offset,t );
+            if(debug==1)printf("newnode needs to be started at offset %d from original node at %p\n",offset,t );
             
             
             
-            printf("%p\n", ptr);
+            if(debug==1)printf("%p\n", ptr);
 
             //printf("%p %p\n",ptr+offset)
             ptr = (ptr + offset);
 
-            printf("%p %p\n", ptr,ptr-offset);
+            if(debug==1)printf("%p %p\n", ptr,ptr-offset);
 
             struct node *newnode = (struct node *)ptr;
 
-            printf("%d %d %d %d\n",sizeof(t->currently_in_use),sizeof(t->prev),sizeof(t),sizeof((*t)) );
-            printf("size of newnode %d\n",sizeof(newnode));
+            if(debug==1)printf("%d %d %d %d\n",sizeof(t->currently_in_use),sizeof(t->prev),sizeof(t),sizeof((*t)) );
+            if(debug==1)printf("size of newnode %d\n",sizeof(newnode));
 
-            assert(newnode>t);
-            assert((void *)newnode > t->mem_block);
-            assert(t->mem_block>t);
+            if(assertd==1){
+                assert(newnode>t);
+                assert((void *)newnode > t->mem_block);
+                assert(t->mem_block>t);
+            }
             //assert(newnode < &t->currently_in_use);
-            printf("%p %p\n", newnode, &t->currently_in_use);
-            assert(newnode>&t->currently_in_use);
-            assert(newnode > &t->prev);
-            assert(newnode > &t->next);
+            if(debug==1)printf("%p %p\n", newnode, &t->currently_in_use);
 
-            assert(newnode > &t->size_of_block);
-            assert(newnode > &t->blk_no);
-            if(debug1==1){
+            if(assertd==1){
+                assert(newnode>&t->currently_in_use);
+                assert(newnode > &t->prev);
+                assert(newnode > &t->next);
+
+                assert(newnode > &t->size_of_block);
+                assert(newnode > &t->blk_no);
+            }
+            if(debug==1){
                 printf("moved break point to %p after creating a header at t + data and it's size is %d \n",newnode,sizeof(newnode));
                 printf("node starts at %p and data starts at %p, %d ,%d , %p,%p\n",t,t->mem_block,t->size_of_block,t->currently_in_use,t->next,t->prev);
                 printf("newnode node starts at %p and data starts at %p, %d ,%d , %p,%p\n",newnode,newnode->mem_block,newnode->size_of_block,newnode->currently_in_use,newnode->next,newnode->prev);
@@ -102,67 +164,83 @@ void check_and_split(void ){
 
             newnode->next = t->next;
 
-            printf("newnode->next %p\n",newnode->next);
+            if(debug==1) printf("newnode->next %p\n",newnode->next);
 
             //assert(t->prev==NULL);
             //assert(t->next==NULL);
             //assert(newnode->next==NULL);
             if(t->next){
-                printf("t is followed by a node\n");
+                if(debug==1)printf("t is followed by a node\n");
                 t->next->prev = newnode;
 
             }
             //assert(t->prev==NULL);
             newnode->prev = t;
-            printf("newnode->prev %p\n",newnode->prev);
+            if(debug==1)printf("newnode->prev %p\n",newnode->prev);
             //assert(t->prev==NULL);
             t->next = newnode;
-            printf("t->next %p\n",t->next);
+
+
+
+            if(debug==1)printf("t->next %p\n",t->next);
             //assert(t->prev==NULL);
-            printf("t->currently_in_use  %d\n",t->currently_in_use);
+            if(debug==1)printf("t->currently_in_use  %d\n",t->currently_in_use);
+
+
             newnode->currently_in_use = 0;
-            printf("newnode->currently_in_use %d\n",newnode->currently_in_use);
+
+
+            if(debug==1)printf("newnode->currently_in_use %d\n",newnode->currently_in_use);
             
-            printf("size of node is %d\n",sizeofnode);
-            printf("Original node's total capacity %d and used size is %d\n",t->size_of_block,t->currently_in_use);
+            if(debug==1)printf("size of node is %d\n",sizeofnode);
+            if(debug==1)printf("Original node's total capacity %d and used size is %d\n",t->size_of_block,t->currently_in_use);
 
             int x = t->currently_in_use;
             //assert(t->prev==NULL);
-            printf(" add of t->prev%p\n", &t->prev );
+
+
+            if(debug==1)printf(" add of t->prev%p\n", &t->prev );
+
+
             newnode->size_of_block = (t->size_of_block - x) - sizeofnode;
-            printf(" add of t->prev %p\n", &t->prev );
+
+
+
+            if(debug==1)printf(" add of t->prev %p\n", &t->prev );
             //assert(t->prev==NULL);
-            printf("%p %p %p\n",&newnode->size_of_block, &t->currently_in_use, &t->size_of_block );
+            if(debug==1)printf("%p %p %p\n",&newnode->size_of_block, &t->currently_in_use, &t->size_of_block );
             //assert(t->prev==NULL);
 
-            printf("%zu\n", t->currently_in_use);
+            if(debug==1)printf("%zu\n", t->currently_in_use);
 
             //assert(t->prev==NULL);
-            assert(t->next==newnode);
-            assert(newnode->prev==t);
+            if(assertd==1){
+                assert(t->next==newnode);
+                assert(newnode->prev==t);
+            }
             //assert(t->currently_in_use!=0);
-            printf("Original node's total capacity %d and used size is %d \n",t->size_of_block,t->currently_in_use);
+            if(debug==1)printf("Original node's total capacity %d and used size is %d \n",t->size_of_block,t->currently_in_use);
 
-            printf("newnode->size_of_block  %d\n",newnode->size_of_block);
-            printf("t->currently_in_use  %d\n",t->currently_in_use);
+            if(debug==1)printf("newnode->size_of_block  %d\n",newnode->size_of_block);
+            if(debug==1)printf("t->currently_in_use  %d\n",t->currently_in_use);
             
             t->size_of_block = t->currently_in_use;
-            printf("t->size_of_block  %d\n",t->size_of_block);
+            if(debug==1)printf("t->size_of_block  %d\n",t->size_of_block);
 
-            printf("Original node's total capacity %d and used size is %d\n",t->size_of_block,t->currently_in_use);
-            printf("%p %p \n",t->prev,t->next);
+            if(debug==1)printf("Original node's total capacity %d and used size is %d\n",t->size_of_block,t->currently_in_use);
+            if(debug==1)printf("%p %p \n",t->prev,t->next);
             offset = sizeofnode ;
             ptr = (char *)ptr;
             ptr = ptr + offset;
-            printf("offset for data of newnode is  %d\n",offset);
+            if(debug==1)printf("offset for data of newnode is  %d\n",offset);
             
             newnode->mem_block = (void *)ptr ;
 
             //assert(t->prev==NULL);
             //assert(newnode->next==NULL);
-            assert(t->next == newnode);
-            printf("original node starts at %p and data starts at %p, %p,%p,%d,%d\n",t,t->mem_block,t->next,t->prev,t->size_of_block,t->currently_in_use);
-            printf("newnode node starts at %p and data starts at %p,%p,%p,%d,%d\n",newnode,newnode->mem_block,newnode->next,newnode->prev,newnode->size_of_block,newnode->currently_in_use);
+            if(assertd==1)assert(t->next == newnode);
+            if(debug==1)printf("original node starts at %p and data starts at %p, %p,%p,%d,%d\n",t,t->mem_block,t->next,t->prev,t->size_of_block,t->currently_in_use);
+            if(debug==1)printf("newnode node starts at %p and data starts at %p,%p,%p,%d,%d\n",newnode,newnode->mem_block,newnode->next,newnode->prev,newnode->size_of_block,newnode->currently_in_use);
             
             if(cur==t)
                 cur = t->next;
@@ -188,7 +266,7 @@ void check_and_split(void ){
 
 struct node *add(void *newmem,struct node * temp,size_t size){
 
-    if(debug==0)
+    if(debug==1)
 	   printf("add function called\n");
 
 	if(start==NULL){
@@ -201,12 +279,12 @@ struct node *add(void *newmem,struct node * temp,size_t size){
 		cur->next = NULL;
 
 		cur->mem_block = newmem;
-		cur->size_of_block = max(MEM,size);
+		cur->size_of_block = MAX(MEM,size);
         //cur->currently_in_use = 0;
         cur->blk_no = 0;
         
 	}else{
-        if(debug==0)
+        if(debug==1)
             printf("start is not null, adding another node to list\n");
 		//struct node *temp = (struct node *)sbrk(sizeof(struct node *));
 
@@ -214,7 +292,7 @@ struct node *add(void *newmem,struct node * temp,size_t size){
 
 		temp->prev = cur;
 
-		temp->size_of_block = max(MEM,size);
+		temp->size_of_block = MAX(MEM,size);
 
 		temp->mem_block = newmem;
         //temp->currently_in_use = 1;
@@ -222,7 +300,7 @@ struct node *add(void *newmem,struct node * temp,size_t size){
         cur->next = temp;
 		cur = temp;
         cur->blk_no = cur->prev->blk_no + 1;
-        if(debug==0)
+        if(debug==1)
             printf("Block numbers : start = %d, cur = %d\n",start->blk_no, cur->blk_no);
 	}
 
@@ -232,11 +310,13 @@ struct node *add(void *newmem,struct node * temp,size_t size){
 void update_counter(struct node *head){
 
 
+    printf("Inside update_counter\n");
     if(head)
         head = head->next;
     while(head!=NULL){
 
         head->blk_no = head->prev->blk_no + 1;
+        head = head->next;
     }
 
     return;
@@ -296,8 +376,10 @@ void *beavalloc(size_t size){
             printf("first_fit was NULL and current location of heap  is %p\n",sbrk(0));
 		size_t to_get = MEM;
 
-        struct node *temp = sbrk(sizeof(struct node *));
-		void   *newmem = sbrk(max(MEM,size));
+        //struct node *temp = (struct node  *)sbrk(sizeof(struct node *));
+
+        struct node *temp = (struct node  *)sbrk(60);
+		void   *newmem = (void *)sbrk(MAX(MEM,size));
 
         //printf("current location of heap after creating node is %p\n",sbrk(0));
 		first_fit = add(newmem,temp,size);
@@ -317,7 +399,7 @@ void *beavalloc(size_t size){
         printf("%p\n", first_fit->mem_block);
 
     check_and_split();
-    update_counter();
+    update_counter(start);
 
 
 	return first_fit->mem_block;
@@ -326,17 +408,17 @@ void print(struct node * start){
 
     struct node *temp = start;
 
-    if(debug==1)
+    if(debugstart==1)
         printf("inside print here %p\n",temp);
 	while(temp!=NULL){
-        if(debug==1){
+        if(debugstart==1){
             printf("node is at %p and data is at %p \n",temp,temp->mem_block);
 		  printf("cap of current block %d  and already used memory %d\n", temp->size_of_block,temp->currently_in_use);
         }
 		temp = temp -> next;
 	}
-    if(debug==1)
-	   printf("\n");
+    if(debugstart==1)
+	   printf("\n\n\n\n");
 }
 
 void beavalloc_reset(void){
@@ -370,11 +452,31 @@ void *beavcalloc(size_t nmemb, size_t size){
 		return (void *)NULL;
 	}
 
+    return beavalloc(nmemb*size);
 
 }
 void beavalloc_dump(uint leaks_only){
 
+    //update_counter(start);
 
+    struct node *temp = start ;
+
+    printf("blk no\tblock add\tnext add\tprev add\tdata add\tblk off\tdat off\tcapacity\tsize\tblk size\tstatus\n");
+    while(temp!=NULL){
+
+        printf("%d\t", temp->blk_no);
+        printf("%p\t", temp);
+        printf("%p\t", temp->next);
+        printf("%p\t", temp->prev);
+        printf("%p\t", temp->mem_block);
+        printf("%d\t", ((char *)temp) - ((char *)baseloc));
+        printf("%d\t", ((char *)temp->mem_block) - ((char *)baseloc));
+        printf("%d\t", temp->size_of_block-temp->currently_in_use);
+        printf("%d\t", temp->size_of_block);
+        printf("%d\t", temp->currently_in_use);
+        printf("%s\n", temp->currently_in_use==0?"free":"in use");
+        temp=temp->next;
+    }
 
 	return;
 }
@@ -386,25 +488,39 @@ void *beavrealloc(void *ptr, size_t size){
 void beavfree(void *ptr){
 
     
-    if(debug==1){
+    if(debugbeavfree==1){
 
         printf("Inside beavfree %p\n", ptr);
     }
 
-    char *temp = (char *)ptr;
-    printf("char temp %p\n", temp);
-    temp = temp - 8;
+    struct node *temp = start;
 
-    printf("head of this node is at %p\n", temp);
+    while(temp!=NULL){
 
-    struct node *t = (struct  node *)temp;
+        printf("%p, %p, %d, %d, %p, %p, %d \n", temp,temp->mem_block,temp->currently_in_use,temp->size_of_block,temp->prev,temp->next,temp->blk_no);
+        if(temp->mem_block == ptr){
+
+            printf("mem_block occurs in node %p\n",temp);
+            temp->currently_in_use = 0;
+            break;
+        }
+        temp = temp->next;
+    }
+    //char *temp = (char *)ptr;
+    //if(debug==1)printf("char temp %p\n", temp);
+    //temp = temp - 8;
+
+    //if(debug==1)printf("head of this node is at %p\n", temp);
+
+    //struct node *t = (struct  node *)temp;
 
 
-    printf("head of this node is at %p in typecasted form\n", t);
+    //if(debug==1)printf("head of this node is at %p in typecasted form\n", t);
 
-    t->currently_in_use = 0;
+    
 
     coalesce();
+    update_counter(start);
     return;
 }
 /*

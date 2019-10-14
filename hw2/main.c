@@ -208,8 +208,11 @@ run_tests(void)
 
         printf("startng to free memory\n");
         beavfree(ptr1);
+        print(start);
         beavfree(ptr3);
+        print(start);
         beavfree(ptr5);
+        print(start);
 
         //beavalloc_dump(FALSE);
         //beavalloc_dump(TRUE);
@@ -322,6 +325,9 @@ run_tests(void)
         ptr4 = beavalloc(7000);
         ptr5 = beavalloc(10000);
 
+        printf("checking after allocation\n");
+
+        print(start);
         assert(base < ptr1);
         assert(ptr1 < ptr2);
         assert(ptr2 < ptr3);
@@ -360,9 +366,26 @@ run_tests(void)
             assert(memcmp(ptr5, ch, 10000) == 0);
         }
 
+        printf("starting to free memory for test 8\n");
+
+        print(start);
+
         beavfree(ptr1);
+
+        print(start);
+
+        printf("going to free ptr 2\n");
         beavfree(ptr2);
+
+        print(start);
+
+
+        printf("going to free ptr 3\n");
         beavfree(ptr3);
+
+        print(start);
+
+        printf("going to free ptr 4\n");
         beavfree(ptr4);
         beavfree(ptr5);
 
@@ -418,6 +441,7 @@ run_tests(void)
 
         for (i = 0; i < num_ptrs; i++) {
             ptrs[i] = beavalloc(i + 100);
+            printf("beavalloc successful for %d",i+100);
         }
 
         for (i = 2; i < num_ptrs; i += 4) {
