@@ -2,12 +2,14 @@
 //#include <assert.h>
 
 #define MEM 1024
-#define debug 0
-#define debug1 1 
+#define debug 1
+#define debug1 0 
 #define assertd 0
-#define debugbeavfree 1
-#define debugstart 1
-#define debugcoalesce 1
+#define debugbeavfree 0
+#define debugstart 0
+#define debugcoalesce 0
+#define denugupdate_counter 0
+#define denugubeavrealloc 0
 /*
 
 
@@ -40,16 +42,16 @@ void coalesce(void){
     while(temp!=NULL && temp->next !=NULL){
 
 
-        printf("temp is %p and temp->next is %p,%p currently used sizes are %d, %d\n",temp,temp->next,temp->next->next,temp->currently_in_use,temp->next->currently_in_use  );
+        if(debugcoalesce==1)printf("temp is %p and temp->next is %p,%p currently used sizes are %d, %d\n",temp,temp->next,temp->next->next,temp->currently_in_use,temp->next->currently_in_use  );
         if(temp->currently_in_use == 0 && temp->next->currently_in_use==0){
 
-            printf("checking in here %d, %d\n",temp->size_of_block,temp->next->size_of_block);
+            if(debugcoalesce==1)printf("checking in here %d, %d\n",temp->size_of_block,temp->next->size_of_block);
             temp->size_of_block += temp->next->size_of_block ;
             temp->size_of_block += 40;
 
 
 
-            printf("checking in here again %d %d\n",temp->size_of_block,temp->next->size_of_block);
+            if(debugcoalesce==1)printf("checking in here again %d %d\n",temp->size_of_block,temp->next->size_of_block);
 
 
             assert(temp->size_of_block!=0);
@@ -57,7 +59,7 @@ void coalesce(void){
             temp->next = temp->next->next;
 
 
-            printf("checking in here again %p \n",temp->next);
+            if(debugcoalesce==1)printf("checking in here again %p \n",temp->next);
 
             if(temp->next && temp->next->next!=NULL){
                 if(debugcoalesce==1)printf("setting previous pointer of temp->next->next %p\n",temp->next->next);
@@ -72,7 +74,7 @@ void coalesce(void){
         }
     }
 
-    printf("exited while loop...");
+    if(debugcoalesce==1)printf("exited while loop...");
     if(debugcoalesce==1)printf("Setting current in coalesce\n");
     temp = start;
     while(temp && temp->next)
@@ -99,7 +101,7 @@ void check_and_split(void ){
         if(debug==1)printf("sizeofnode is %d\n",sizeofnode );
         if(debug==1)printf("node starts at %p and data starts at %p, %d ,%d , %p,%p\n",t,t->mem_block,t->size_of_block,t->currently_in_use,t->next,t->prev);
 
-        if((t->size_of_block - t->currently_in_use) > sizeofnode && t->currently_in_use>0){
+        if((t->size_of_block - t->currently_in_use) > 60 && t->currently_in_use>0){
 
             // split nodes;
             if(debug==1)printf("going to split\n");
@@ -119,7 +121,7 @@ void check_and_split(void ){
                 printf("node starts at %p and data starts at %p\n",t,t->mem_block);
                 printf("Node's total capacity %d and used size is %d\n",t->size_of_block,t->currently_in_use);
             }
-            offset = sizeofnode + t->currently_in_use;
+            offset = 60 + t->currently_in_use;
 
             if(debug==1)printf("newnode needs to be started at offset %d from original node at %p\n",offset,t );
             
@@ -229,7 +231,7 @@ void check_and_split(void ){
 
             if(debug==1)printf("Original node's total capacity %d and used size is %d\n",t->size_of_block,t->currently_in_use);
             if(debug==1)printf("%p %p \n",t->prev,t->next);
-            offset = sizeofnode ;
+            offset = 60 ;
             ptr = (char *)ptr;
             ptr = ptr + offset;
             if(debug==1)printf("offset for data of newnode is  %d\n",offset);
@@ -258,7 +260,7 @@ void check_and_split(void ){
     //     start = start->next;
     // }
 
-    printf("Returning from check_and_split\n");
+    if(debugcoalesce==1)printf("Returning from check_and_split\n");
 
     return;
 
@@ -285,7 +287,7 @@ struct node *add(void *newmem,struct node * temp,size_t size){
         
 	}else{
         if(debug==1)
-            printf("start is not null, adding another node to list\n");
+            printf("start is not null, adding another node to list %p, %p, %d\n",temp,cur,((char *)temp)-baseloc);
 		//struct node *temp = (struct node *)sbrk(sizeof(struct node *));
 
 		temp->next = NULL;
@@ -310,15 +312,19 @@ struct node *add(void *newmem,struct node * temp,size_t size){
 void update_counter(struct node *head){
 
 
-    printf("Inside update_counter\n");
+    if(denugupdate_counter)beavalloc_dump(FALSE);
+
+    if(denugupdate_counter)printf("Inside update_counter %p, %p\n",head,head->next);
     if(head)
         head = head->next;
     while(head!=NULL){
-
+        if(denugupdate_counter)printf("Inside while loop for updating %p , %p, %p\n",head,head->next,head->prev);
+        if(denugupdate_counter)printf("%d %d \n", head->blk_no ,head->prev->blk_no );
         head->blk_no = head->prev->blk_no + 1;
         head = head->next;
     }
 
+    if(denugupdate_counter)printf("exitting update counter\n");
     return;
 
 }
@@ -373,7 +379,7 @@ void *beavalloc(size_t size){
 
 	if(first_fit == NULL){
         if(debug==1)
-            printf("first_fit was NULL and current location of heap  is %p\n",sbrk(0));
+            printf("first_fit was NULL and current location of heap  is %d\n",((char *)sbrk(0))-baseloc);
 		size_t to_get = MEM;
 
         //struct node *temp = (struct node  *)sbrk(sizeof(struct node *));
@@ -383,24 +389,30 @@ void *beavalloc(size_t size){
 
         //printf("current location of heap after creating node is %p\n",sbrk(0));
 		first_fit = add(newmem,temp,size);
-        if(debug==1)
-            printf("current location of heap after adding memory and creating header is %p\n",sbrk(0));
+        if(debug==1){
+            printf("offset of first_fit %d\n",((char *)first_fit)-baseloc);
+            printf("offset of first_fit mem_block %d\n",((char *)first_fit->mem_block)-baseloc);
+        }
 		
 	}
 
     first_fit->currently_in_use = size;
     
-    if(debug==1)
+    if(debug==1){
         printf("value of start after memory allocation  is %d\n",start->blk_no);
     	printf("value of cur after memory allocation  is %d\n",cur->blk_no);
+    }
     assert(first_fit!=NULL);
+
     assert(first_fit->mem_block!=NULL);
     if(debug==1)
         printf("%p\n", first_fit->mem_block);
 
+    if(debug==1) beavalloc_dump(FALSE);
     check_and_split();
     update_counter(start);
 
+    if(debug==1)printf("exitting beavalloc.....\n",first_fit->mem_block);
 
 	return first_fit->mem_block;
 }
@@ -483,7 +495,46 @@ void beavalloc_dump(uint leaks_only){
 
 void *beavrealloc(void *ptr, size_t size){
 
-    return;
+
+    if(denugubeavrealloc)printf("Inside beavrealloc %p,%zu\n",ptr,size );
+
+    if(!size)
+        return (void *) NULL;
+
+    if(!ptr)
+        return beavalloc(size);
+
+    struct node *temp = start;
+
+    while(temp && temp->mem_block==ptr)
+        temp = temp->next;
+
+    if(!temp)
+        return beavalloc(size);
+
+    //beavfree(ptr);
+    if(denugubeavrealloc)printf("ptr was previously allocated memory....\n");
+
+
+    void *ptr1 = beavalloc(size);
+
+    if(denugubeavrealloc)printf("Before copying memory block\n");
+
+    if(denugubeavrealloc)beavalloc_dump(FALSE);
+
+
+
+    memcpy(ptr1,ptr,size);
+
+    if(denugubeavrealloc)printf("After copying memory block\n");
+    if(denugubeavrealloc)beavalloc_dump(FALSE);
+
+
+
+    beavfree(ptr);
+
+    if(denugubeavrealloc)printf("exitting beavrealloc............................\n");
+    return ptr1;
 }
 void beavfree(void *ptr){
 
@@ -497,10 +548,10 @@ void beavfree(void *ptr){
 
     while(temp!=NULL){
 
-        printf("%p, %p, %d, %d, %p, %p, %d \n", temp,temp->mem_block,temp->currently_in_use,temp->size_of_block,temp->prev,temp->next,temp->blk_no);
+        //printf("%p, %p, %d, %d, %p, %p, %d \n", temp,temp->mem_block,temp->currently_in_use,temp->size_of_block,temp->prev,temp->next,temp->blk_no);
         if(temp->mem_block == ptr){
 
-            printf("mem_block occurs in node %p\n",temp);
+            if(debugbeavfree)printf("mem_block occurs in node %p\n",temp);
             temp->currently_in_use = 0;
             break;
         }
@@ -518,6 +569,11 @@ void beavfree(void *ptr){
     //if(debug==1)printf("head of this node is at %p in typecasted form\n", t);
 
     
+    if(debugbeavfree)printf("Before calling coalesce\n");
+    if(debugbeavfree)beavalloc_dump(FALSE);
+
+
+
 
     coalesce();
     update_counter(start);

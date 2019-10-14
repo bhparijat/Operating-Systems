@@ -18,7 +18,7 @@
 #define OPTIONS "hvt:"
 
 extern char end, etext, edata;
-uint test_number = 0;
+uint test_number = 12;
 
 void run_tests(void);
 
@@ -441,9 +441,10 @@ run_tests(void)
 
         for (i = 0; i < num_ptrs; i++) {
             ptrs[i] = beavalloc(i + 100);
-            printf("beavalloc successful for %d",i+100);
+            
         }
 
+        printf("beavalloc successful for %d",i+100);
         for (i = 2; i < num_ptrs; i += 4) {
             beavfree(ptrs[i]);
         }
@@ -510,10 +511,16 @@ run_tests(void)
         char *ptr1 = NULL;
 
         fprintf(stderr, "*** Begin %d\n", 12);
-        fprintf(stderr, "      stress 3\n");
+        fprintf(stderr, "      stress 3\n");assert(sbrk(0)>cur);
 
         for (i = 0; i < num_ptrs; i++) {
             ptrs[i] = beavalloc(i + 10);
+            printf("done for %d and cur brk point is %p\n",i,sbrk(0));
+
+            assert(sbrk(0)>cur);
+            beavalloc_dump(FALSE);
+
+
         }
         for (i = 0; i < num_ptrs; i ++) {
             beavfree(ptrs[i]);
@@ -697,6 +704,9 @@ run_tests(void)
         }
 
         assert(memcmp(ptrs, ptr1, 5 * sizeof(char *)) == 0);
+
+
+
         beavalloc_dump(FALSE);
 
         ptr1 = beavrealloc(ptr1, 2000 * (sizeof(char *)));
@@ -748,10 +758,12 @@ run_tests(void)
         for (i = 0; i < 5; i++) {
             ptr1[i] = ptrs[i];
         }
-
+        //printf("check -1 \n");
         assert(memcmp(ptrs, ptr1, 5 * sizeof(char *)) == 0);
         beavalloc_dump(FALSE);
 
+
+        //printf("check 1 \n");
         ptr1 = beavrealloc(ptr1, 2000 * (sizeof(char *)));
         assert(memcmp(ptrs, ptr1, 5 * sizeof(char *)) == 0);
 
@@ -761,14 +773,28 @@ run_tests(void)
         assert(memcmp(ptrs, ptr1, 10 * sizeof(char *)) == 0);
         beavalloc_dump(FALSE);
 
+
+        //printf("check 2 \n");
+        //beavalloc_dump(FALSE);
+
+
         ptr1 = beavrealloc(ptr1, 2 * (sizeof(char *)));
         assert(memcmp(ptrs, ptr1, 2 * sizeof(char *)) == 0);
 
         beavalloc_dump(FALSE);
 
         for (i = 0; i < 10; i++) {
+
+
+            //printf("Going to free a node %d",i);
             beavfree(ptrs[i]);
+
+            //beavalloc_dump(FALSE);
         }
+
+
+
+        //printf("check 3 \n");
         beavfree(ptr1);
         beavalloc_dump(FALSE);
 
