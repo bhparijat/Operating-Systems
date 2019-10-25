@@ -27,6 +27,7 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
+	rand.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -193,6 +194,7 @@ UPROGS=\
 	_cp\
 	_mfork\
 	_mult\
+	_random\
 	$(NULL)
 
 fs.img: mkfs README $(UPROGS)

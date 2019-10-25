@@ -17,6 +17,22 @@
 # define TRUE 1
 #endif
 
+
+#ifndef LOTTERY_SCHED
+
+#define LOTTERY_SCHED
+
+#define DEFAULT_NICE_VALUE 20
+
+#define MAX_NICE_VALUE 40
+
+#define MIN_NICE_VALUE 1
+
+
+#endif
+
+
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -79,6 +95,13 @@ struct proc {
 
 #endif
 
+
+
+#ifdef LOTTERY_SCHED
+
+  int nice_value;
+
+#endif
 
 };
 

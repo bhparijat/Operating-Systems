@@ -37,3 +37,4 @@ SYSCALL(cps)
 #endif // CPS
 
 SYSCALL(kdebug)
+SYSCALL(random)

@@ -110,6 +110,7 @@ extern int sys_getppid(void);
 extern int sys_cps(void);
 #endif // CPS
 extern int sys_kdebug(void);
+extern int sys_random(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -140,6 +141,7 @@ static int (*syscalls[])(void) = {
 [SYS_cps]     sys_cps,
 #endif // CPS
 [SYS_kdebug] sys_kdebug,
+[SYS_random] sys_random,
 };
 
 void

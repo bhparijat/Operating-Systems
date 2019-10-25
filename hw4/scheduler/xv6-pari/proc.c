@@ -101,6 +101,12 @@ found:
   p->ticks_total = 0;
   p->ticks_begin = 0;
   p->sched_times = 0;
+
+#ifdef LOTTERY_SCHED
+  
+  p->nice_value = DEFAULT_NICE_VALUE;
+
+#endif
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -202,6 +208,13 @@ fork(void)
     return -1;
   }
 
+
+
+#ifdef LOTTERY_SCHED
+
+  np->nice_value = curproc->nice_value;
+
+#endif
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
@@ -553,7 +566,7 @@ sys_cps(void)
 
     acquire(&ptable.lock);
     cprintf(
-        "pid\tppid\tname\tstate\tsize\tStart time\t\tticks\tsched"
+        "pid\tppid\tname\tstate\tsize\tStart time\t\tticks\tsched\tnice_value"
         );
     cprintf("\n");
     for (i = 0; i < NPROC; i++) {
@@ -568,7 +581,7 @@ sys_cps(void)
 
 	    if(ptable.proc[i].begin_date.month<10){
 
-	      cprintf("%d\t%d\t%s\t%s\t%d\t%d-0%d-%d %d:%d:%d\t%d\t%d"
+	      cprintf("%d\t%d\t%s\t%s\t%d\t%d-0%d-%d %d:%d:%d\t%d\t%d\t%d"
 		      , ptable.proc[i].pid
 		      , ptable.proc[i].parent ? ptable.proc[i].parent->pid : 1
 		      , ptable.proc[i].name, state
@@ -581,10 +594,12 @@ sys_cps(void)
 		      , ptable.proc[i].begin_date.second
 		      , ptable.proc[i].ticks_total
 		      , ptable.proc[i].sched_times
+		      , ptable.proc[i].nice_value
+		      
 	      );
 
 	    }else{
-            cprintf("%d\t%d\t%s\t%s\t%d\t%d-%d-%d %d:%d:%d\t%d\t%d"
+             cprintf("%d\t%d\t%s\t%s\t%d\t%d-%d-%d %d:%d:%d\t%d\t%d\t%d"
                     , ptable.proc[i].pid
                     , ptable.proc[i].parent ? ptable.proc[i].parent->pid : 1
                     , ptable.proc[i].name, state
@@ -597,6 +612,7 @@ sys_cps(void)
 		    , ptable.proc[i].begin_date.second
 		    , ptable.proc[i].ticks_total
 		    , ptable.proc[i].sched_times
+		    , ptable.proc[i].nice_value
 		    
 	    );
 	}
