@@ -28,7 +28,6 @@
 
 #define MIN_NICE_VALUE 1
 
-
 #endif
 
 

@@ -5,7 +5,7 @@ static unsigned  long next = 1;
 int rand(void) {
   next = next * 1103515245 + 12345;
 
-  // unsigned int x = (unsigned)uptime();
+  // unsigned int x = (unsigned)time(NULL);
  
  int x = ((unsigned)(next/65536) % RAND_MAX);
  srand(x);

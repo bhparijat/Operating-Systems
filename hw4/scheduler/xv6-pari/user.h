@@ -162,6 +162,7 @@ void free(void*);
 int atoi(const char*);
 
 
+
 int random(void);
 
 #endif // __USER_H

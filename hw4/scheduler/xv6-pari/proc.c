@@ -7,7 +7,13 @@
 #include "proc.h"
 #include "spinlock.h"
 
+
+
+
 #define SCHED_PROCESS
+
+
+
 uint debugState = FALSE;
 
 struct {
@@ -92,7 +98,11 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   //  printf("%d\n",p->pid);
+#ifdef LOTTERY_SCHED
+  
+  p->nice_value = DEFAULT_NICE_VALUE;
 
+#endif
   release(&ptable.lock);
 
 
@@ -102,11 +112,7 @@ found:
   p->ticks_begin = 0;
   p->sched_times = 0;
 
-#ifdef LOTTERY_SCHED
-  
-  p->nice_value = DEFAULT_NICE_VALUE;
 
-#endif
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -123,7 +129,7 @@ found:
   sp -= 4;
   *(uint*)sp = (uint)trapret;
 
-  sp -= sizeof *p->context;
+  sp -= sizeof *p->context; 
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
@@ -406,6 +412,130 @@ scheduler(void)
 
   }
 }
+
+/*
+void scheduler(void){
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+
+  for(;;){
+
+    sti();
+
+
+    acquire(&ptable.lock);
+
+    int total = 0;
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+      total += p->nice_value;
+    }
+
+    if(total==0){
+  
+      release(&ptable.lock);
+      continue;
+    }
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+      total += p->nice_value;
+    }
+
+
+    int r = random();
+
+
+    r = r%total;
+
+    if(r==0){
+
+      release(&ptable.lock);
+      continue;
+    }
+
+
+    int sum = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+          continue;
+        
+        sum+=p->nice_value;
+
+        if(sum<r)
+          continue;
+
+
+        c->proc = p;
+        switchuvm(p);
+
+
+
+      #ifdef SCHED_PROCESS
+
+        p->sched_times +=1;
+        p->ticks_begin = ticks_time();
+      #endif
+        p->state = RUNNING;
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+
+      #ifdef SCHED_PROCESS
+
+        p->ticks_total = p->ticks_total + (ticks_time()-p->ticks_begin);
+      #endif
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+    }
+    release(&ptable.lock);
+
+
+  }
+
+
+}
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
